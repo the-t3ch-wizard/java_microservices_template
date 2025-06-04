@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.microservices.user.dto.UserRequestDTO;
 import com.microservices.user.dto.UserResponseDTO;
+import com.microservices.user.dto.UserResponseWithPasswordDTO;
 import com.microservices.user.exception.CustomException;
 import com.microservices.user.model.User;
 import com.microservices.user.repository.UserRepository;
@@ -16,12 +17,16 @@ import com.microservices.user.repository.UserRepository;
 @Service
 public class UserService {
 
+    private final UserRepository userRepository;
+
     @Autowired
-    UserRepository userRepository;
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public UserResponseDTO saveOneUser(UserRequestDTO userDto){
         User newUser = User.builder()
-            .name(userDto.getName())
+            .username(userDto.getUsername())
             .email(userDto.getEmail())
             .password(userDto.getPassword())
             .build();
@@ -31,7 +36,7 @@ public class UserService {
         return UserResponseDTO.builder()
             .userId(newUser.getId())
             .email(newUser.getEmail())
-            .name(newUser.getName())
+            .username(newUser.getUsername())
             .createdAt(newUser.getCreatedAt())
             .build();
     }
@@ -43,7 +48,7 @@ public class UserService {
         return UserResponseDTO.builder()
             .userId(userId)
             .email(user.getEmail())
-            .name(user.getName())
+            .username(user.getUsername())
             .createdAt(user.getCreatedAt())
             .build();
     }
@@ -55,7 +60,7 @@ public class UserService {
             .map(user -> UserResponseDTO.builder()
                 .userId(user.getId())
                 .email(user.getEmail())
-                .name(user.getName())
+                .username(user.getUsername())
                 .createdAt(user.getCreatedAt())
                 .build())
             .toList();
@@ -68,14 +73,14 @@ public class UserService {
         // password will be changed in another api
         // email will be changed in another api
         // so, currently only name can be changed
-        existingUser.setName(newUserDto.getName());
+        existingUser.setUsername(newUserDto.getUsername());
 
         userRepository.save(existingUser);
 
         return UserResponseDTO.builder()
             .userId(userId)
             .email(existingUser.getEmail())
-            .name(existingUser.getName())
+            .username(existingUser.getUsername())
             .createdAt(existingUser.getCreatedAt())
             .build();
     }
@@ -83,6 +88,21 @@ public class UserService {
     public boolean deleteOneUser(UUID userId) {
         userRepository.deleteById(userId);
         return true;
+    }
+
+    public UserResponseWithPasswordDTO getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new CustomException("No user found", HttpStatus.BAD_REQUEST);
+        }
+        
+        return UserResponseWithPasswordDTO.builder()
+            .userId(user.getId())
+            .username(user.getUsername())
+            .email(user.getEmail())
+            .password(user.getPassword())
+            .build();
     }
     
 }

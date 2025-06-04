@@ -46,6 +46,15 @@ services:
       - service-registry
       - user-service
 
+  auth-service:
+    build: ./auth
+    container_name: auth-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - service-registry
+      - user-service
+
 volumes:
   mysql_data:
 

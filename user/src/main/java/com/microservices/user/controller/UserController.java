@@ -32,9 +32,15 @@ public class UserController {
         return SuccessResponseHandler.generaResponseEntity("User created successfully", HttpStatus.CREATED, userService.saveOneUser(userDto));
     }
 
+    // @GetMapping("")
+    // public ResponseEntity<?> getOneUser(@RequestParam UUID userId){
+    //     return SuccessResponseHandler.generaResponseEntity("User fetched successfully", HttpStatus.ACCEPTED, userService.getOneUser(userId));
+    // }
+
     @GetMapping("")
-    public ResponseEntity<?> getOneUser(@RequestParam UUID userId){
-        return SuccessResponseHandler.generaResponseEntity("User fetched successfully", HttpStatus.ACCEPTED, userService.getOneUser(userId));
+    public ResponseEntity<?> getUserByUsername(@RequestParam String username){
+        // return SuccessResponseHandler.generaResponseEntity("User fetched successfully", HttpStatus.ACCEPTED, userService.getUserByUsername(username));
+        return ResponseEntity.ok(userService.getUserByUsername(username));
     }
 
     @GetMapping("/all")
