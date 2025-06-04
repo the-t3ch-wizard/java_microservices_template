@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    ports:
+      # using host port as 3307 inorder to avoid conflict with local machine's mysql
+      - 3307:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: test
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  service-registry:
+    build: ./service_registry
+    container_name: service-registry
+    ports:
+      - "8761:8761"  # Map internal port to host port
+
+  user-service:
+    build: ./user
+    ports:
+      - "8081:8080"
+    container_name: user-service
+    depends_on:
+      - mysql
+      - service-registry
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/test
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 1234
+  
+  api_gateway:
+    build: ./api_gateway
+    ports:
+      - "8090:8090"
+    container_name: api_gateway
+    depends_on:
+      - service-registry
+      - user-service
+
+volumes:
+  mysql_data:
+
