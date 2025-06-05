@@ -4,13 +4,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class SignInRequest {
-    @NotBlank @Size(min = 3, max = 50)
+    @NotBlank(message = "Username cannot be empty")
+    @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
     private String username;
 
-    @NotBlank @Size(min = 6, max = 100)
+    @NotBlank(message = "Password cannot be empty")
+    @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
 
-    // getters & setters
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
     public String getPassword() { return password; }

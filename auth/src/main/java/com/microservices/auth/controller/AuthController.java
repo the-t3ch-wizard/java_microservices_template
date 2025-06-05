@@ -3,6 +3,7 @@ package com.microservices.auth.controller;
 import com.microservices.auth.client.UserServiceClient;
 import com.microservices.auth.dto.SignInRequest;
 import com.microservices.auth.dto.SignUpRequest;
+import com.microservices.auth.dto.UserDtoResponse;
 import com.microservices.auth.dto.JwtResponse;
 import com.microservices.auth.security.JwtUtils;
 import com.microservices.auth.security.PasswordEncoderAdapter;
@@ -34,20 +35,15 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    /** 1) SIGN-UP → call user-service.createUser(...) via Feign */
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignUpRequest request) {
         try {
-            // 1) Read the raw password
             String rawPwd = request.getPassword();
 
-            // 2) Encode it
             String hashed = passwordEncoder.encode(rawPwd);
 
-            // 3) Replace the plaintext password in the DTO
             request.setPassword(hashed);
 
-            // 4) Forward to user-service (it will save the already‐hashed password)
             userClient.createUser(request);
 
             return ResponseEntity.ok("User registered successfully");
@@ -58,7 +54,6 @@ public class AuthController {
         }
     }
 
-    /** 2) SIGN-IN → authenticate locally (uses custom AuthenticationProvider calling Feign) */
     @PostMapping("/signin")
     public ResponseEntity<?> signin(@RequestBody SignInRequest request, HttpServletResponse response) {
         Authentication authToken = new UsernamePasswordAuthenticationToken(
@@ -67,7 +62,13 @@ public class AuthController {
         );
         try {
             Authentication authResult = authManager.authenticate(authToken);
-            String jwt = jwtUtils.generateJwtToken(request.getUsername());
+            
+            UserDtoResponse userDetails = userClient.getUserByUsername(request.getUsername());
+            if (userDetails == null) return ResponseEntity.status(401).body("Invalid username or password");
+            
+            String role = userDetails.getRole().name();
+
+            String jwt = jwtUtils.generateJwtToken(request.getUsername(), role);
 
             ResponseCookie cookie = ResponseCookie.from("AuthToken", jwt)
                 .httpOnly(true)
@@ -83,7 +84,6 @@ public class AuthController {
         }
     }
 
-    /** 3) SIGN-OUT → clear cookie */
     @PostMapping("/signout")
     public ResponseEntity<?> signout(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from("AuthToken", "")

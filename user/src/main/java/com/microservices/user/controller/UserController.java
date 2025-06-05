@@ -1,7 +1,5 @@
 package com.microservices.user.controller;
 
-import java.util.UUID;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,11 +30,8 @@ public class UserController {
         return SuccessResponseHandler.generaResponseEntity("User created successfully", HttpStatus.CREATED, userService.saveOneUser(userDto));
     }
 
-    // @GetMapping("")
-    // public ResponseEntity<?> getOneUser(@RequestParam UUID userId){
-    //     return SuccessResponseHandler.generaResponseEntity("User fetched successfully", HttpStatus.ACCEPTED, userService.getOneUser(userId));
-    // }
-
+    // this is being used in auth service so, no change in response format
+    // Todo : match response in auth based on normal response
     @GetMapping("")
     public ResponseEntity<?> getUserByUsername(@RequestParam String username){
         // return SuccessResponseHandler.generaResponseEntity("User fetched successfully", HttpStatus.ACCEPTED, userService.getUserByUsername(username));
@@ -49,13 +44,13 @@ public class UserController {
     }
 
     @PutMapping("")
-    public ResponseEntity<?> putOneUser(@RequestParam UUID userId, @RequestBody UserRequestDTO userDto){
-        return SuccessResponseHandler.generaResponseEntity("User updated successfully", HttpStatus.ACCEPTED, userService.updateOneUser(userId, userDto));
+    public ResponseEntity<?> putOneUser(@RequestParam String username, @Valid @RequestBody UserRequestDTO userDto){
+        return SuccessResponseHandler.generaResponseEntity("User updated successfully", HttpStatus.ACCEPTED, userService.updateOneUser(username, userDto));
     }
 
     @DeleteMapping("")
-    public ResponseEntity<?> deleteOneUser(@RequestParam UUID userId){
-        return SuccessResponseHandler.generaResponseEntity("User deleted successfully", HttpStatus.ACCEPTED, userService.deleteOneUser(userId));
+    public ResponseEntity<?> deleteOneUser(@RequestParam String username){
+        return SuccessResponseHandler.generaResponseEntity("User deleted successfully", HttpStatus.ACCEPTED, userService.deleteOneUser(username));
     }
 
 }

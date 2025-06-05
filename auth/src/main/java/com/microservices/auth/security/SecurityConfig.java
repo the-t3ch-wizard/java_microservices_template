@@ -53,7 +53,8 @@ public class SecurityConfig {
         // 3) Public endpoints:
         http.authorizeHttpRequests()
             .requestMatchers("/auth/signup", "/auth/signin", "/auth/signout").permitAll()
-            .anyRequest().authenticated();
+            .requestMatchers("/admin/**").hasRole("ADMIN")
+            .anyRequest().hasAnyRole("USER", "ADMIN");
 
         // 4) Add our custom JWT filter BEFORE BasicAuthenticationFilter
         http.addFilterBefore(new JwtAuthFilter(jwtUtils), BasicAuthenticationFilter.class);

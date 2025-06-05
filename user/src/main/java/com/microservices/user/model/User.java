@@ -11,6 +11,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,8 +27,15 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     
+    // Todo : username and email has to be unique
+    @Column(unique = true)
     private String username;
+
+    @Email
+    @Column(unique = true)
     private String email;
+
+    @Size(min = 8, message = "Password must be atleaast 8 character long")
     private String password;
 
     @Enumerated(EnumType.STRING)

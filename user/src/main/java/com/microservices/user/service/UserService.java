@@ -9,10 +9,11 @@ import org.springframework.stereotype.Service;
 
 import com.microservices.user.dto.UserRequestDTO;
 import com.microservices.user.dto.UserResponseDTO;
-import com.microservices.user.dto.UserResponseWithPasswordDTO;
 import com.microservices.user.exception.CustomException;
 import com.microservices.user.model.User;
 import com.microservices.user.repository.UserRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class UserService {
@@ -24,19 +25,23 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    @Transactional
     public UserResponseDTO saveOneUser(UserRequestDTO userDto){
         User newUser = User.builder()
             .username(userDto.getUsername())
             .email(userDto.getEmail())
             .password(userDto.getPassword())
+            .role(userDto.getRole())
             .build();
 
         userRepository.save(newUser);
 
         return UserResponseDTO.builder()
             .userId(newUser.getId())
-            .email(newUser.getEmail())
             .username(newUser.getUsername())
+            .email(newUser.getEmail())
+            .password(newUser.getPassword())
+            .role(newUser.getRole())
             .createdAt(newUser.getCreatedAt())
             .build();
     }
@@ -47,8 +52,10 @@ public class UserService {
 
         return UserResponseDTO.builder()
             .userId(userId)
-            .email(user.getEmail())
             .username(user.getUsername())
+            .email(user.getEmail())
+            .password(user.getPassword())
+            .role(user.getRole())
             .createdAt(user.getCreatedAt())
             .build();
     }
@@ -59,16 +66,20 @@ public class UserService {
         return users.stream()
             .map(user -> UserResponseDTO.builder()
                 .userId(user.getId())
-                .email(user.getEmail())
                 .username(user.getUsername())
+                .email(user.getEmail())
+                .password(user.getPassword())
+                .role(user.getRole())
                 .createdAt(user.getCreatedAt())
                 .build())
             .toList();
     }
 
-    public UserResponseDTO updateOneUser(UUID userId, UserRequestDTO newUserDto) {
-        User existingUser = userRepository.findById(userId)
-            .orElseThrow(() -> new CustomException("No user found", HttpStatus.BAD_REQUEST));
+    @Transactional
+    public UserResponseDTO updateOneUser(String username, UserRequestDTO newUserDto) {
+        User existingUser = userRepository.findByUsername(username);
+
+        if (existingUser == null) throw new CustomException("No user found", HttpStatus.BAD_REQUEST);
 
         // password will be changed in another api
         // email will be changed in another api
@@ -78,30 +89,35 @@ public class UserService {
         userRepository.save(existingUser);
 
         return UserResponseDTO.builder()
-            .userId(userId)
-            .email(existingUser.getEmail())
+            .userId(existingUser.getId())
             .username(existingUser.getUsername())
+            .email(existingUser.getEmail())
+            .password(existingUser.getPassword())
+            .role(existingUser.getRole())
             .createdAt(existingUser.getCreatedAt())
             .build();
     }
 
-    public boolean deleteOneUser(UUID userId) {
-        userRepository.deleteById(userId);
+    @Transactional
+    public boolean deleteOneUser(String username) {
+        userRepository.deleteByUsername(username);
         return true;
     }
 
-    public UserResponseWithPasswordDTO getUserByUsername(String username) {
+    public UserResponseDTO getUserByUsername(String username) {
         User user = userRepository.findByUsername(username);
 
         if (user == null) {
             throw new CustomException("No user found", HttpStatus.BAD_REQUEST);
         }
         
-        return UserResponseWithPasswordDTO.builder()
+        return UserResponseDTO.builder()
             .userId(user.getId())
             .username(user.getUsername())
             .email(user.getEmail())
             .password(user.getPassword())
+            .role(user.getRole())
+            .createdAt(user.getCreatedAt())
             .build();
     }
     

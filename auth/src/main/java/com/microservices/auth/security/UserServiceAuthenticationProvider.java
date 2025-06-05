@@ -51,10 +51,13 @@ public class UserServiceAuthenticationProvider implements AuthenticationProvider
             throw new BadCredentialsException("Invalid username or password");
         }
 
+        String roleName = userDto.getRole().name();
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + roleName);
+
         return new UsernamePasswordAuthenticationToken(
             username,
             userDto.getPassword(),
-            Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+            Collections.singletonList(authority)
         );
     }
 
