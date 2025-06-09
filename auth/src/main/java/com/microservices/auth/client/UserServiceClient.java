@@ -12,7 +12,7 @@ public interface UserServiceClient {
     @PostMapping("/users")
     void createUser(@RequestBody SignUpRequest signup);
 
-    @GetMapping("/users")
-    UserDtoResponse getUserByUsername(@RequestParam String username);
-    
+    // ← changed to /users/search
+    @GetMapping("/users/search")
+    UserDtoResponse getUserByUsername(@RequestParam("username") String username);
 }

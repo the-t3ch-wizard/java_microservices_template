@@ -2,123 +2,101 @@ package com.microservices.user.service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.microservices.user.dto.AuthUserDTO;
 import com.microservices.user.dto.UserRequestDTO;
 import com.microservices.user.dto.UserResponseDTO;
 import com.microservices.user.exception.CustomException;
 import com.microservices.user.model.User;
 import com.microservices.user.repository.UserRepository;
 
-import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
-
-    private final UserRepository userRepository;
-
-    @Autowired
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final UserRepository repo;
 
     @Transactional
-    public UserResponseDTO saveOneUser(UserRequestDTO userDto){
-        User newUser = User.builder()
-            .username(userDto.getUsername())
-            .email(userDto.getEmail())
-            .password(userDto.getPassword())
-            .role(userDto.getRole())
-            .build();
-
-        userRepository.save(newUser);
-
-        return UserResponseDTO.builder()
-            .userId(newUser.getId())
-            .username(newUser.getUsername())
-            .email(newUser.getEmail())
-            .password(newUser.getPassword())
-            .role(newUser.getRole())
-            .createdAt(newUser.getCreatedAt())
-            .build();
-    }
-
-    public UserResponseDTO getOneUser(UUID userId){
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new CustomException("No user found", HttpStatus.BAD_REQUEST));
-
-        return UserResponseDTO.builder()
-            .userId(userId)
-            .username(user.getUsername())
-            .email(user.getEmail())
-            .password(user.getPassword())
-            .role(user.getRole())
-            .createdAt(user.getCreatedAt())
-            .build();
-    }
-
-    public List<UserResponseDTO> getAllUsers() {
-        List<User> users = userRepository.findAll();
-
-        return users.stream()
-            .map(user -> UserResponseDTO.builder()
-                .userId(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .password(user.getPassword())
-                .role(user.getRole())
-                .createdAt(user.getCreatedAt())
-                .build())
-            .toList();
-    }
-
-    @Transactional
-    public UserResponseDTO updateOneUser(String username, UserRequestDTO newUserDto) {
-        User existingUser = userRepository.findByUsername(username);
-
-        if (existingUser == null) throw new CustomException("No user found", HttpStatus.BAD_REQUEST);
-
-        // password will be changed in another api
-        // email will be changed in another api
-        // so, currently only name can be changed
-        existingUser.setUsername(newUserDto.getUsername());
-
-        userRepository.save(existingUser);
-
-        return UserResponseDTO.builder()
-            .userId(existingUser.getId())
-            .username(existingUser.getUsername())
-            .email(existingUser.getEmail())
-            .password(existingUser.getPassword())
-            .role(existingUser.getRole())
-            .createdAt(existingUser.getCreatedAt())
-            .build();
-    }
-
-    @Transactional
-    public boolean deleteOneUser(String username) {
-        userRepository.deleteByUsername(username);
-        return true;
-    }
-
-    public UserResponseDTO getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username);
-
-        if (user == null) {
-            throw new CustomException("No user found", HttpStatus.BAD_REQUEST);
+    public UserResponseDTO saveOneUser(UserRequestDTO dto) {
+        if (repo.existsByUsername(dto.getUsername())) {
+            throw new CustomException("Username already taken", HttpStatus.BAD_REQUEST);
         }
-        
-        return UserResponseDTO.builder()
-            .userId(user.getId())
-            .username(user.getUsername())
-            .email(user.getEmail())
-            .password(user.getPassword())
-            .role(user.getRole())
-            .createdAt(user.getCreatedAt())
+
+        User u = User.builder()
+            .username(dto.getUsername())
+            .email(dto.getEmail())
+            .password(dto.getPassword())
+            .role(dto.getRole())
+            .build();
+
+        repo.save(u);
+        return mapToPublic(u);
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponseDTO getOneUser(UUID userId) {
+        User u = repo.findById(userId)
+            .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+        return mapToPublic(u);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserResponseDTO> getAllUsers() {
+        return repo.findAll().stream()
+                   .map(this::mapToPublic)
+                   .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UserResponseDTO updateOneUser(UUID userId, UserRequestDTO dto) {
+        User u = repo.findById(userId)
+            .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+
+        u.setUsername(dto.getUsername());
+        u.setEmail(dto.getEmail());
+        // for security, do not overwrite password here
+        repo.save(u);
+        return mapToPublic(u);
+    }
+
+    @Transactional
+    public void deleteOneUser(UUID userId) {
+        if (!repo.existsById(userId)) {
+            throw new CustomException("User not found", HttpStatus.NOT_FOUND);
+        }
+        repo.deleteById(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public AuthUserDTO getAuthUserByUsername(String username) {
+        User u = repo.findByUsername(username);
+        if (u == null) {
+            throw new CustomException("User not found", HttpStatus.NOT_FOUND);
+        }
+        return AuthUserDTO.builder()
+            .userId(u.getId())
+            .username(u.getUsername())
+            .email(u.getEmail())
+            .password(u.getPassword())
+            .role(u.getRole())
+            .createdAt(u.getCreatedAt())
             .build();
     }
-    
+
+    private UserResponseDTO mapToPublic(User u) {
+        return UserResponseDTO.builder()
+            .userId(u.getId())
+            .username(u.getUsername())
+            .email(u.getEmail())
+            .role(u.getRole())
+            .createdAt(u.getCreatedAt())
+            .updatedAt(u.getUpdatedAt())
+            .build();
+    }
 }

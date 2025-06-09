@@ -1,56 +1,64 @@
 package com.microservices.user.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
 
+import com.microservices.user.dto.AuthUserDTO;
 import com.microservices.user.dto.UserRequestDTO;
+import com.microservices.user.dto.UserResponseDTO;
 import com.microservices.user.service.UserService;
 import com.microservices.user.utils.SuccessResponseHandler;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
+@Validated
 public class UserController {
 
-    @Autowired
-    UserService userService;
+    private final UserService userService;
 
-    @PostMapping("")
-    public ResponseEntity<?> postOneUser(@Valid @RequestBody UserRequestDTO userDto){
-        return SuccessResponseHandler.generaResponseEntity("User created successfully", HttpStatus.CREATED, userService.saveOneUser(userDto));
+    @PostMapping
+    public ResponseEntity<?> createUser(@Valid @RequestBody UserRequestDTO dto) {
+        UserResponseDTO created = userService.saveOneUser(dto);
+        return SuccessResponseHandler.generaResponseEntity("User created successfully", HttpStatus.CREATED, created);
     }
 
-    // this is being used in auth service so, no change in response format
-    // Todo : match response in auth based on normal response
-    @GetMapping("")
-    public ResponseEntity<?> getUserByUsername(@RequestParam String username){
-        // return SuccessResponseHandler.generaResponseEntity("User fetched successfully", HttpStatus.ACCEPTED, userService.getUserByUsername(username));
-        return ResponseEntity.ok(userService.getUserByUsername(username));
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUser(@PathVariable UUID id) {
+        UserResponseDTO user = userService.getOneUser(id);
+        return SuccessResponseHandler.generaResponseEntity("User fetched successfully", HttpStatus.OK, user);
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllUsers(){
-        return SuccessResponseHandler.generaResponseEntity("All users fetched successfully", HttpStatus.ACCEPTED, userService.getAllUsers());
+    @GetMapping
+    public ResponseEntity<?> listUsers() {
+        List<UserResponseDTO> all = userService.getAllUsers();
+        return SuccessResponseHandler.generaResponseEntity("All users fetched successfully", HttpStatus.OK, all);
     }
 
-    @PutMapping("")
-    public ResponseEntity<?> putOneUser(@RequestParam String username, @Valid @RequestBody UserRequestDTO userDto){
-        return SuccessResponseHandler.generaResponseEntity("User updated successfully", HttpStatus.ACCEPTED, userService.updateOneUser(username, userDto));
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequestDTO dto) {
+        UserResponseDTO updated = userService.updateOneUser(id, dto);
+        return SuccessResponseHandler.generaResponseEntity("User updated successfully", HttpStatus.OK, updated);
     }
 
-    @DeleteMapping("")
-    public ResponseEntity<?> deleteOneUser(@RequestParam String username){
-        return SuccessResponseHandler.generaResponseEntity("User deleted successfully", HttpStatus.ACCEPTED, userService.deleteOneUser(username));
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable UUID id) {
+        userService.deleteOneUser(id);
+        return SuccessResponseHandler.generaResponseEntity("User deleted successfully", HttpStatus.OK, null);
     }
 
+    // used by auth-service (returns password)
+    @GetMapping("/search")
+    public ResponseEntity<AuthUserDTO> getByUsername(@RequestParam String username) {
+        AuthUserDTO auth = userService.getAuthUserByUsername(username);
+        return ResponseEntity.ok(auth);
+    }
 }

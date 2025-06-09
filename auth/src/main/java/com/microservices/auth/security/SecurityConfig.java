@@ -52,7 +52,7 @@ public class SecurityConfig {
 
         // 3) Public endpoints:
         http.authorizeHttpRequests()
-            .requestMatchers("/auth/signup", "/auth/signin", "/auth/signout").permitAll()
+            .requestMatchers("/auth/signup", "/auth/signin", "/auth/signout", "/auth/me").permitAll()
             .requestMatchers("/admin/**").hasRole("ADMIN")
             .anyRequest().hasAnyRole("USER", "ADMIN");
 

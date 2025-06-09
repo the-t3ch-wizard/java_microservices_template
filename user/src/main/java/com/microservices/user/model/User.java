@@ -1,52 +1,50 @@
 package com.microservices.user.model;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 @Entity
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
-    // Todo : username and email has to be unique
-    @Column(unique = true)
+
+    @NotBlank
+    @Size(min = 3, max = 20)
+    @Column(nullable = false, unique = true)
     private String username;
 
+    @NotBlank
     @Email
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Size(min = 8, message = "Password must be atleaast 8 character long")
+    @NotBlank
+    @Size(min = 8)
+    @Column(nullable = false)
     private String password;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
-
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 }

@@ -35,9 +35,9 @@ public class SecurityConfig {
           .authorizeExchange(exchanges -> exchanges
               .pathMatchers("/auth-service/**").permitAll()       // open endpoints for login/signup
               .pathMatchers("/user-service/**").authenticated()
-              .pathMatchers("/other-service/**")
-              .authenticated()
-              .anyExchange().denyAll()
+            //   .pathMatchers("/other-service/**")
+            //   .authenticated()
+              .anyExchange().authenticated()
           )
 
           // 4. (Optional) If you want to support HTTP Basic on top of JWT:

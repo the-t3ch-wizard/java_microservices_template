@@ -9,9 +9,7 @@ import com.microservices.user.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
-
   User findByUsername(String username);
-
+  boolean existsByUsername(String username);
   void deleteByUsername(String username);
-
 }

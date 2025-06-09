@@ -26,35 +26,63 @@ services:
 
   user-service:
     build: ./user
-    ports:
-      - "8081:8080"
     container_name: user-service
+    ports:
+      - "8081:8081"
     depends_on:
       - mysql
       - service-registry
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/test
+      SPRING_DATASOURCE_URL:    jdbc:mysql://mysql:3306/test
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 1234
-  
-  api_gateway:
-    build: ./api_gateway
+
+  habit-service:
+    build: ./habit-service
+    container_name: habit-service
     ports:
-      - "8090:8090"
-    container_name: api_gateway
+      - "8082:8082"
     depends_on:
+      - mysql
       - service-registry
-      - user-service
+    environment:
+      SPRING_DATASOURCE_URL:    jdbc:mysql://mysql:3306/test
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 1234
+
+  habit-status-service:
+    build: ./habit-status-service
+    container_name: habit-status-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mysql
+      - service-registry
+    environment:
+      SPRING_DATASOURCE_URL:    jdbc:mysql://mysql:3306/test
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 1234
 
   auth-service:
     build: ./auth
     container_name: auth-service
     ports:
-      - "8082:8082"
+      - "8080:8080"
     depends_on:
       - service-registry
       - user-service
 
+  api_gateway:
+    build: ./api_gateway
+    container_name: api_gateway
+    ports:
+      - "8090:8090"
+    depends_on:
+      - service-registry
+      - user-service
+      - habit-service
+      - habit-status-service
+      - auth-service
+
 volumes:
   mysql_data:
-
